@@ -119,10 +119,19 @@ public class SyncFiles extends AppCompatActivity {
                     else
                         requestPermissionInternet();
                 }
-
             }
         });
 
+        Button changeApplicationButton = findViewById(R.id.changeApplicationButton);
+        changeApplicationButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                // Avvia l'applicazione SyncGallery
+                startActivity(new Intent(SyncFiles.this, SyncGallery.class));
+
+            }
+        });
     }
 
     private boolean checkPermissionInternet() {

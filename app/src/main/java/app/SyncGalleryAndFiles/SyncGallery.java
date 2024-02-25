@@ -184,6 +184,17 @@ public class SyncGallery extends AppCompatActivity {
                 }
             }
         });
+
+        Button changeApplicationButton = findViewById(R.id.changeApplicationButton);
+        changeApplicationButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                // Avvia l'applicazione SyncFiles
+                startActivity(new Intent(SyncGallery.this, SyncFiles.class));
+
+            }
+        });
     }
 
     private void executeInBackground(Runnable task) {

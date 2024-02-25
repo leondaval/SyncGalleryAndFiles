@@ -32,6 +32,19 @@
         android:id="@+id/changeDirectoryButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Cambia directory sorgente" />
+        android:text="Cambia directory sorgente"
+        android:layout_marginBottom="20dp"/>
+
+    <Button
+        android:id="@+id/changeApplicationButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Passa a SyncFiles"
+        android:layout_marginBottom="20dp"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Stai utilizzando SyncGallery!" />
 
 </LinearLayout>
