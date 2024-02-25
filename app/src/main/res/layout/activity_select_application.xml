@@ -1,0 +1,56 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".AlertActivity">
+
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="100dp"
+        android:autoLink="web"
+        android:linksClickable="true"
+        android:padding="20dp"
+        android:text="Ok, siamo pronti per iniziare, ora ti chiedo di selezionare l'applicazione di tuo interesse tramite i bottoni qui sotto: SyncGallery o SyncFiles?"
+        android:textAlignment="center"
+        android:textSize="20sp" />
+
+    <View
+        android:id="@+id/leftMargin"
+        android:layout_width="5mm"
+        android:layout_height="match_parent"
+        android:layout_below="@id/textView"
+        android:layout_alignParentStart="true"/>
+
+    <View
+        android:id="@+id/rightMargin"
+        android:layout_width="5mm"
+        android:layout_height="match_parent"
+        android:layout_below="@id/textView"
+        android:layout_alignParentEnd="true"/>
+
+    <Button
+        android:id="@+id/buttonSyncGallery"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/textView"
+        android:layout_marginTop="40dp"
+        android:layout_marginRight="180dp"
+        android:layout_toLeftOf="@id/rightMargin"
+        android:layout_toRightOf="@id/leftMargin"
+        android:text="SyncGallery" />
+
+    <Button
+        android:id="@+id/buttonSyncFiles"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/textView"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="40dp"
+        android:layout_marginEnd="30dp"
+        android:layout_marginRight="138dp"
+        android:layout_toLeftOf="@id/rightMargin"
+        android:text="SyncFiles" />
+
+</RelativeLayout>
