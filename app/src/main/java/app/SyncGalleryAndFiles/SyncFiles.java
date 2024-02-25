@@ -157,7 +157,7 @@ public class SyncFiles extends AppCompatActivity {
 
     private boolean copySelectedFiles(Uri[] selectedFileUris) throws FileNotFoundException {
         boolean success = true;
-        String dstDirPath = "/sdcard/DCIM/SYNC";
+        String dstDirPath = "/sdcard/DCIM/SYNCFILES";
 
         for (Uri srcFileUri : selectedFileUris) {
             // Ottieni il nome originale del file con estensione
@@ -197,7 +197,7 @@ public class SyncFiles extends AppCompatActivity {
 
     private boolean moveSelectedFiles(Uri[] selectedFileUris) throws FileNotFoundException {
         boolean success = true;
-        String dstDirPath = "/sdcard/DCIM/SYNC";
+        String dstDirPath = "/sdcard/DCIM/SYNCFILES";
         for (Uri srcFileUri : selectedFileUris) {
             // Ottieni il nome originale del file con estensione
             String[] projection = {MediaStore.Images.Media.DISPLAY_NAME};
@@ -282,7 +282,7 @@ public class SyncFiles extends AppCompatActivity {
     private void copy() {
         String[] mimeTypes = {"*/*"}; // Consenti tutti i tipi di file
         boolean success = true;
-        String dstDirPath = "/sdcard/DCIM/SYNC";
+        String dstDirPath = "/sdcard/DCIM/SYNCFILES";
         // Verifica se la cartella "SYNC" esiste e, se necessario, la crea
         File syncDir = new File(dstDirPath);
         if (!syncDir.exists()) {
@@ -301,7 +301,7 @@ public class SyncFiles extends AppCompatActivity {
     private boolean move() {
         String[] mimeTypes = {"*/*"}; // Consenti tutti i tipi di file
         boolean success = true;
-        String dstDirPath = "/sdcard/DCIM/SYNC";
+        String dstDirPath = "/sdcard/DCIM/SYNCFILES";
         // Verifica se la cartella "SYNC" esiste e, se necessario, la crea
         File syncDir = new File(dstDirPath);
         if (!syncDir.exists()) {
@@ -319,7 +319,7 @@ public class SyncFiles extends AppCompatActivity {
     }
 
     private void showSmbCredentialsDialog() {
-        String dstDirPath = "/sdcard/DCIM/SYNC";
+        String dstDirPath = "/sdcard/DCIM/SYNCFILES";
         boolean successo = true;
         // Verifica se la cartella "SYNC" esiste e, se necessario, la crea
         File syncDir = new File(dstDirPath);
@@ -345,7 +345,7 @@ public class SyncFiles extends AppCompatActivity {
                             String username = usernameEditText.getText().toString();
                             String password = passwordEditText.getText().toString();
                             String smbUrl = smbUrlEditText.getText().toString();
-                            copyDirectoryToSMB(new java.io.File("/sdcard/DCIM/SYNC"), smbUrl, "BACKUP", username, password);
+                            copyDirectoryToSMB(new java.io.File("/sdcard/DCIM/SYNCFILES"), smbUrl, "BACKUP", username, password);
                         }
                     })
                     .setNegativeButton("Annulla", new DialogInterface.OnClickListener() {

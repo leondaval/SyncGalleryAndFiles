@@ -298,7 +298,7 @@ public class SyncGallery extends AppCompatActivity {
 
         srcdir = "/sdcard/" + srcdirr;
 
-        success &= copyDirectory(new File(srcdir), new File("/sdcard/DCIM/SYNC"));
+        success &= copyDirectory(new File(srcdir), new File("/sdcard/DCIM/SYNCGALLERY"));
         return success;
     }
 
@@ -371,7 +371,7 @@ public class SyncGallery extends AppCompatActivity {
 
         srcdir = "/sdcard/" + srcdirr;
 
-        success &= moveDirectory(new File(srcdir), new File("/sdcard/DCIM/SYNC"));
+        success &= moveDirectory(new File(srcdir), new File("/sdcard/DCIM/SYNCGALLERY"));
         return success;
     }
 
@@ -453,7 +453,7 @@ public class SyncGallery extends AppCompatActivity {
     }
 
     private void showSmbCredentialsDialog() {
-        String dstDirPath = "/sdcard/DCIM/SYNC";
+        String dstDirPath = "/sdcard/DCIM/SYNCGALLERY";
         boolean successo = true;
         // Verifica se la cartella "SYNC" esiste e, se necessario, la crea
         File syncDir = new File(dstDirPath);
@@ -479,7 +479,7 @@ public class SyncGallery extends AppCompatActivity {
                             String username = usernameEditText.getText().toString();
                             String password = passwordEditText.getText().toString();
                             String smbUrl = smbUrlEditText.getText().toString();
-                            moveDirectoryToSMB(new java.io.File("/sdcard/DCIM/SYNC"), smbUrl, "BACKUP", username, password);
+                            moveDirectoryToSMB(new java.io.File("/sdcard/DCIM/SYNCGALLERY"), smbUrl, "BACKUP", username, password);
                         }
                     })
                     .setNegativeButton("Annulla", new DialogInterface.OnClickListener() {
