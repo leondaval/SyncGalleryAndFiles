@@ -57,10 +57,8 @@ public class SyncFiles extends AppCompatActivity {
         requestPermissionMemoryAll();
 
         if (checkPermissionMemory()) { // Verifica se il permesso è già stato concesso durante un esecuzione dell'app in passato
-
             Toast.makeText(SyncFiles.this, "Permesso necessario, già concesso, complimenti!", Toast.LENGTH_SHORT).show();
             permissionCheck = true;
-
         }
 
         Button copyDirectoryButton = findViewById(R.id.copyFilesButton);
@@ -107,15 +105,11 @@ public class SyncFiles extends AppCompatActivity {
         syncDirectoryButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
                 if (checkPermissionMemory() && checkPermissionInternet())
                     showSmbCredentialsDialog();
-
                 else {
-
                     if (!checkPermissionMemory())
                         requestPermissionMemory();
-
                     else
                         requestPermissionInternet();
                 }
@@ -126,10 +120,8 @@ public class SyncFiles extends AppCompatActivity {
         changeApplicationButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
                 // Avvia l'applicazione SyncGallery
                 startActivity(new Intent(SyncFiles.this, SyncGallery.class));
-
             }
         });
     }
@@ -156,9 +148,7 @@ public class SyncFiles extends AppCompatActivity {
         requestPermissionLauncher.launch(intent);
     }
 
-    ActivityResultLauncher<Intent> requestPermissionLauncher =
-            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
-            });
+    ActivityResultLauncher<Intent> requestPermissionLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {});
 
     private void requestPermissionInternet() {
         ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_NETWORK_STATE, Manifest.permission.INTERNET}, PERMISSION_REQUEST_CODE_INTERNET);
@@ -258,11 +248,10 @@ public class SyncFiles extends AppCompatActivity {
                         throw new RuntimeException(e);
                     }
 
-                    if (copyResult) {
+                    if (copyResult)
                         Toast.makeText(SyncFiles.this, "Copia eseguita con successo!", Toast.LENGTH_SHORT).show();
-                    } else {
+                    else
                         Toast.makeText(SyncFiles.this, "Errore, copia non riuscita!", Toast.LENGTH_SHORT).show();
-                    }
                 }
             }
     );
@@ -279,11 +268,10 @@ public class SyncFiles extends AppCompatActivity {
                         throw new RuntimeException(e);
                     }
 
-                    if (moveResult) {
+                    if (moveResult)
                         Toast.makeText(SyncFiles.this, "Spostamento eseguito con successo!", Toast.LENGTH_SHORT).show();
-                    } else {
+                    else
                         Toast.makeText(SyncFiles.this, "Errore, spostamento non riuscito!", Toast.LENGTH_SHORT).show();
-                    }
                 }
             }
     );
@@ -301,7 +289,6 @@ public class SyncFiles extends AppCompatActivity {
                 success = false;
             } else
                 Toast.makeText(SyncFiles.this, "Cartella SYNC creata con successo", Toast.LENGTH_LONG).show();
-
         }
         if (success)
             filePickerLauncherCopy.launch(mimeTypes);
@@ -320,7 +307,6 @@ public class SyncFiles extends AppCompatActivity {
                 success = false;
             } else
                 Toast.makeText(SyncFiles.this, "Cartella SYNC creata con successo", Toast.LENGTH_LONG).show();
-
         }
         if (success)
             filePickerLauncherMove.launch(mimeTypes);
@@ -339,7 +325,6 @@ public class SyncFiles extends AppCompatActivity {
                 successo = false;
             } else
                 Toast.makeText(SyncFiles.this, "Cartella SYNC creata con successo", Toast.LENGTH_LONG).show();
-
         }
         if (successo) {
             AlertDialog.Builder builder = new AlertDialog.Builder(this);

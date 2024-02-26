@@ -189,10 +189,8 @@ public class SyncGallery extends AppCompatActivity {
         changeApplicationButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
                 // Avvia l'applicazione SyncFiles
                 startActivity(new Intent(SyncGallery.this, SyncFiles.class));
-
             }
         });
     }
@@ -236,9 +234,7 @@ public class SyncGallery extends AppCompatActivity {
         requestPermissionLauncher.launch(intent);
     }
 
-    ActivityResultLauncher<Intent> requestPermissionLauncher =
-            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
-            });
+    ActivityResultLauncher<Intent> requestPermissionLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {});
 
     private void requestPermissionInternet() {
         ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_NETWORK_STATE, Manifest.permission.INTERNET}, PERMISSION_REQUEST_CODE_INTERNET);
@@ -247,10 +243,8 @@ public class SyncGallery extends AppCompatActivity {
     private ActivityResultLauncher<Intent> directoryLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
-
                 if (result.getResultCode() == Activity.RESULT_OK) {
                     Intent data = result.getData();
-
                     if (data != null) {
                         directoryUri = data.getData();
                         String srcdirtemp = directoryUri.getPath();
@@ -264,10 +258,8 @@ public class SyncGallery extends AppCompatActivity {
             });
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
-                                           @NonNull int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-
         switch (requestCode) {
             case PERMISSION_REQUEST_CODE_NOTIFICATIONS:
                 // Gestisci la risposta per i permessi delle notifiche
@@ -275,7 +267,6 @@ public class SyncGallery extends AppCompatActivity {
                     Toast.makeText(SyncGallery.this, "Grazie, permesso notifiche concesso!", Toast.LENGTH_SHORT).show();
                 else
                     Toast.makeText(SyncGallery.this, "Attenzione, permesso notifiche negato!", Toast.LENGTH_SHORT).show();
-
                 break;
 
             case PERMISSION_REQUEST_CODE_MEMORY:
@@ -284,7 +275,6 @@ public class SyncGallery extends AppCompatActivity {
                     Toast.makeText(SyncGallery.this, "Grazie, permesso memoria concesso!", Toast.LENGTH_SHORT).show();
                 else
                     Toast.makeText(SyncGallery.this, "Attenzione, permesso memoria negato!", Toast.LENGTH_SHORT).show();
-
                 break;
         }
     }
@@ -433,8 +423,7 @@ public class SyncGallery extends AppCompatActivity {
         }
     }
 
-    private void showProgressNotification(String message, int progress, boolean isOngoing,
-                                          int notificationId) {
+    private void showProgressNotification(String message, int progress, boolean isOngoing, int notificationId) {
         // Controlla se l'app possiede i permessi necessari
         if (checkPermissionMemory() && checkPermissionNotifications()) {
             // Crea un canale di notifica Android
@@ -453,14 +442,11 @@ public class SyncGallery extends AppCompatActivity {
             if (progress >= 0 && progress <= 100)
                 builder.setProgress(100, progress, false);
 
-            if (checkSelfPermission(Manifest.permission.ACCESS_NOTIFICATION_POLICY) == PackageManager.PERMISSION_GRANTED &&
-                    checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED)
-
+            if (checkSelfPermission(Manifest.permission.ACCESS_NOTIFICATION_POLICY) == PackageManager.PERMISSION_GRANTED && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED)
                 NotificationManagerCompat.from(this).notify(notificationId, builder.build());
-
-        } else {
-            Toast.makeText(this, "Errore, permessi non concessi!", Toast.LENGTH_SHORT).show();
         }
+        else
+            Toast.makeText(this, "Errore, permessi non concessi!", Toast.LENGTH_SHORT).show();
     }
 
     private void showSmbCredentialsDialog() {
@@ -502,8 +488,7 @@ public class SyncGallery extends AppCompatActivity {
         }
     }
 
-    private void moveDirectoryToSMB(File localDir, String smbUrl, String shareName, String
-            username, String password) {
+    private void moveDirectoryToSMB(File localDir, String smbUrl, String shareName, String username, String password) {
         // Controllo dei permessi
         if (!checkPermissionMemory()) {
             Toast.makeText(SyncGallery.this, "Errore, permesso non concesso", Toast.LENGTH_SHORT).show();
@@ -542,9 +527,8 @@ public class SyncGallery extends AppCompatActivity {
                             int movedFiles = 0;
 
                             for (File localFile : localDir.listFiles()) {
-                                if (localFile.isFile()) {
+                                if (localFile.isFile())
                                     totalFiles++;
-                                }
                             }
 
                             for (File localFile : localDir.listFiles()) {
@@ -590,9 +574,8 @@ public class SyncGallery extends AppCompatActivity {
                                                 });
                                                 successo[0] = true;
                                             }
-                                        } else {
+                                        } else
                                             showErrorMessage("Errore durante lo spostamento del file locale");
-                                        }
                                     } catch (IOException e) {
                                         e.printStackTrace();
                                         showErrorMessage("Errore di I/O durante il trasferimento del file");
