@@ -10,7 +10,6 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
@@ -66,8 +65,6 @@ public class SyncGallery extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main_syncgallery); // Mostra il layout dell'attività principale
-
-        requestPermissionMemoryAll();
 
         if (checkPermissionMemory() && checkPermissionNotifications()) // Verifica se i permessi sono già stati concessi durante un esecuzione dell'app in passato
 
@@ -228,13 +225,6 @@ public class SyncGallery extends AppCompatActivity {
                 Manifest.permission.READ_EXTERNAL_STORAGE
         }, PERMISSION_REQUEST_CODE_MEMORY);
     }
-
-    private void requestPermissionMemoryAll() {
-        Intent intent = new Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION);
-        requestPermissionLauncher.launch(intent);
-    }
-
-    ActivityResultLauncher<Intent> requestPermissionLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {});
 
     private void requestPermissionInternet() {
         ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_NETWORK_STATE, Manifest.permission.INTERNET}, PERMISSION_REQUEST_CODE_INTERNET);
