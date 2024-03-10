@@ -47,5 +47,8 @@
         <activity android:name=".SyncFiles"
             android:exported="true">
         </activity>
+
+        <service android:name=".BackgroundServices" />
+
     </application>
 </manifest>

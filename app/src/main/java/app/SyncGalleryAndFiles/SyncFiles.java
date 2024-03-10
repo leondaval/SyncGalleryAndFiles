@@ -53,16 +53,12 @@ public class SyncFiles extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main_syncfiles);
 
-        if (checkPermissionMemory()) { // Verifica se il permesso è già stato concesso durante un esecuzione dell'app in passato
-            Toast.makeText(SyncFiles.this, "Permesso necessario, già concesso, complimenti!", Toast.LENGTH_SHORT).show();
-            permissionCheck = true;
-        }
-
         Button copyDirectoryButton = findViewById(R.id.copyFilesButton);
         copyDirectoryButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (checkPermissionMemory() || permissionCheck) {
+                    // Inizializza e mostra l'AlertDialog
                     AlertDialog.Builder builder = new AlertDialog.Builder(SyncFiles.this);
                     builder.setView(R.layout.progress_dialog_layout); // Creare un layout personalizzato con una ProgressBar
                     builder.setCancelable(false); // Imposta su true se vuoi che l'utente possa annullare l'operazione
@@ -121,6 +117,24 @@ public class SyncFiles extends AppCompatActivity {
                 startActivity(new Intent(SyncFiles.this, SyncGallery.class));
             }
         });
+    }
+
+    // Mostra nuovamente il ProgressDialog quando l'Activity viene riportata in primo piano
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (progressDialog != null && !progressDialog.isShowing()) {
+            progressDialog.show();
+        }
+    }
+
+    // Nasconde il ProgressDialog quando l'Activity va in background
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (progressDialog != null && progressDialog.isShowing()) {
+            progressDialog.dismiss();
+        }
     }
 
     private boolean checkPermissionInternet() {

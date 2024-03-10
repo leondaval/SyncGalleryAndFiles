@@ -66,51 +66,46 @@ public class SyncGallery extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main_syncgallery); // Mostra il layout dell'attività principale
 
-        if (checkPermissionMemory() && checkPermissionNotifications()) // Verifica se i permessi sono già stati concessi durante un esecuzione dell'app in passato
-
-            Toast.makeText(SyncGallery.this, "Permessi necessari, già concessi, complimenti!", Toast.LENGTH_SHORT).show();
-
-        else if (!checkPermissionNotifications())
+        if (!checkPermissionNotifications())
 
             requestPermissionNotifications(); // Richiesta del permesso relativo alle notifiche
 
         Button copyDirectoryButton = findViewById(R.id.copyDirectoryButton);
         copyDirectoryButton.setOnClickListener(new View.OnClickListener() {
+
             @Override
             public void onClick(View v) {
-
                 if (checkPermissionMemory()) {
                     if (directoryUri != null) {
-
+                        // Inizializza e mostra l'AlertDialog
                         AlertDialog.Builder builder = new AlertDialog.Builder(SyncGallery.this);
                         builder.setView(R.layout.progress_dialog_layout); // Creare un layout personalizzato con una ProgressBar
                         builder.setCancelable(false); // Imposta su true se vuoi che l'utente possa annullare l'operazione
-
                         progressDialog = builder.create();
                         progressDialog.show();
 
                         executeInBackground(() -> {
-
                             boolean success = Copy();
 
                             runOnUiThread(() -> {
-
                                 progressDialog.dismiss(); // Chiudi l'AlertDialog
 
                                 if (success) {
                                     Toast.makeText(SyncGallery.this, "Copia eseguita con successo!", Toast.LENGTH_SHORT).show();
                                     showProgressNotification("File totali copiati: " + Files, -1, false, NotificationId3);
-                                } else
+                                } else {
                                     Toast.makeText(SyncGallery.this, "Errore, copia non riuscita!", Toast.LENGTH_SHORT).show();
-
+                                }
                             });
                         });
-                    } else
+                    } else {
                         openDirectory();
-                } else
+                    }
+                } else {
                     requestPermissionMemory();
-
+                }
             }
+
         });
 
         Button moveDirectoryButton = findViewById(R.id.moveDirectoryButton);
@@ -190,6 +185,24 @@ public class SyncGallery extends AppCompatActivity {
                 startActivity(new Intent(SyncGallery.this, SyncFiles.class));
             }
         });
+    }
+
+    // Mostra nuovamente il ProgressDialog quando l'Activity viene riportata in primo piano
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (progressDialog != null && !progressDialog.isShowing()) {
+            progressDialog.show();
+        }
+    }
+
+    // Nasconde il ProgressDialog quando l'Activity va in background
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (progressDialog != null && progressDialog.isShowing()) {
+            progressDialog.dismiss();
+        }
     }
 
     private void executeInBackground(Runnable task) {
