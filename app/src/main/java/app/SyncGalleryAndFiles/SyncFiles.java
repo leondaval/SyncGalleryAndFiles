@@ -43,21 +43,24 @@ import com.hierynomus.smbj.share.DiskShare;
 public class SyncFiles extends AppCompatActivity {
 
     ExecutorService executorService = Executors.newSingleThreadExecutor(); // Esecuzione del processo su thread separato (per non intasare la memoria e il thread principale)
-    private static final int PERMISSION_REQUEST_CODE_MEMORY = 1;  // ID per la richiesta del permesso relativo all'accesso alla memoria
-    private static final int PERMISSION_REQUEST_CODE_INTERNET = 2;  // ID per la richiesta del permesso relativo all'uso di internet per il collegamento al server SMB
+    private static final int PERMISSION_REQUEST_CODE_MEMORY = 1; // ID per la richiesta del permesso relativo all'accesso alla memoria
+    private static final int PERMISSION_REQUEST_CODE_INTERNET = 2; // ID per la richiesta del permesso relativo all'uso di internet per il collegamento al server SMB
     boolean permissionCheck = false; //Controllo stato dei permessi
     private AlertDialog progressDialog; // Popup a schermo che mostra lo il caricamento del processo corrente
+    private boolean isCopying = false; // Variabile per tenere traccia dello stato del processo di copia
+    private boolean isMoveing = false; // Variabile per tenere traccia dello stato del processo di spostamento
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main_syncfiles);
+        setContentView(R.layout.activity_main_syncfiles); // Mostra il layout dell'attività principale
 
         Button copyDirectoryButton = findViewById(R.id.copyFilesButton);
         copyDirectoryButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (checkPermissionMemory() || permissionCheck) {
+
                     // Inizializza e mostra l'AlertDialog
                     AlertDialog.Builder builder = new AlertDialog.Builder(SyncFiles.this);
                     builder.setView(R.layout.progress_dialog_layout); // Creare un layout personalizzato con una ProgressBar
@@ -66,9 +69,15 @@ public class SyncFiles extends AppCompatActivity {
                     progressDialog = builder.create();
                     progressDialog.show();
 
-                    copy();
+                    isCopying = true; // Imposta la variabile a true quando inizia il processo di copia
 
+                    executeInBackground(() -> {
+                        copy();
+                    });
+
+                    isCopying = false; // Reimposta la variabile a false quando il processo di copia è completato
                     progressDialog.dismiss(); // Chiudi l'AlertDialog
+
                 } else
                     requestPermissionMemory();
             }
@@ -86,9 +95,15 @@ public class SyncFiles extends AppCompatActivity {
                     progressDialog = builder.create();
                     progressDialog.show();
 
-                    move();
+                    isMoveing = true; // Imposta la variabile a true quando inizia il processo di spostamento
 
+                    executeInBackground(() -> {
+                        move();
+                    });
+
+                    isMoveing = false; // Reimposta la variabile a false quando il processo di spostamento è completato
                     progressDialog.dismiss(); // Chiudi l'AlertDialog
+
                 } else
                     requestPermissionMemory();
             }
@@ -123,7 +138,7 @@ public class SyncFiles extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        if (progressDialog != null && !progressDialog.isShowing()) {
+        if (progressDialog != null && (isCopying || isMoveing) && !progressDialog.isShowing()) {
             progressDialog.show();
         }
     }
@@ -132,10 +147,12 @@ public class SyncFiles extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        if (progressDialog != null && progressDialog.isShowing()) {
+        if (progressDialog != null && (isCopying || isMoveing) && progressDialog.isShowing()) {
             progressDialog.dismiss();
         }
     }
+
+    private void executeInBackground(Runnable task) {executorService.execute(task);}
 
     private boolean checkPermissionInternet() {
         int networkStatePermission = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_NETWORK_STATE);
@@ -170,7 +187,7 @@ public class SyncFiles extends AppCompatActivity {
             if (cursor != null && cursor.moveToFirst()) {
                 int nameColumnIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME);
                 srcFileName = cursor.getString(nameColumnIndex);
-                ((Cursor) cursor).close();
+                cursor.close();
             }
 
             String dstFilePath = dstDirPath + "/" + srcFileName;
@@ -195,6 +212,9 @@ public class SyncFiles extends AppCompatActivity {
             }
         }
 
+        // Chiudi l'AlertDialog indipendentemente dall'esito dell'operazione
+        progressDialog.dismiss();
+
         return success;
     }
 
@@ -209,7 +229,7 @@ public class SyncFiles extends AppCompatActivity {
             if (cursor != null && cursor.moveToFirst()) {
                 int nameColumnIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME);
                 srcFileName = cursor.getString(nameColumnIndex);
-                ((Cursor) cursor).close();
+                cursor.close();
             }
 
             String dstFilePath = dstDirPath + "/" + srcFileName;
@@ -276,6 +296,8 @@ public class SyncFiles extends AppCompatActivity {
                         Toast.makeText(SyncFiles.this, "Spostamento eseguito con successo!", Toast.LENGTH_SHORT).show();
                     else
                         Toast.makeText(SyncFiles.this, "Errore, spostamento non riuscito!", Toast.LENGTH_SHORT).show();
+
+                    progressDialog.dismiss(); // Chiudi l'AlertDialog
                 }
             }
     );
@@ -296,6 +318,7 @@ public class SyncFiles extends AppCompatActivity {
         }
         if (success)
             filePickerLauncherCopy.launch(mimeTypes);
+        progressDialog.dismiss(); // Chiudi l'AlertDialog
     }
 
     private boolean move() {

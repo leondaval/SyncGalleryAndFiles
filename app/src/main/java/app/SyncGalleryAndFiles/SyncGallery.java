@@ -57,9 +57,11 @@ public class SyncGallery extends AppCompatActivity {
     private ArrayList<Uri> directoryUriList; // Da utilizzare (forse) in futuro per implementare una selezione multipla di directory da parte dell'utente
     private AlertDialog progressDialog; // Popup a schermo che mostra lo il caricamento del processo corrente
     ExecutorService executorService = Executors.newSingleThreadExecutor(); // Esecuzione del processo su thread separato (per non intasare la memoria e il thread principale)
-    private static final int PERMISSION_REQUEST_CODE_NOTIFICATIONS = 1;  // ID per la richiesta del permesso relativo alle notifiche
-    private static final int PERMISSION_REQUEST_CODE_MEMORY = 2;  // ID per la richiesta del permesso relativo alle memoria
-    private static final int PERMISSION_REQUEST_CODE_INTERNET = 3;  // ID per la richiesta del permesso relativo aLL'uso di internet
+    private static final int PERMISSION_REQUEST_CODE_NOTIFICATIONS = 1; // ID per la richiesta del permesso relativo alle notifiche
+    private static final int PERMISSION_REQUEST_CODE_MEMORY = 2; // ID per la richiesta del permesso relativo alle memoria
+    private static final int PERMISSION_REQUEST_CODE_INTERNET = 3; // ID per la richiesta del permesso relativo aLL'uso di internet
+    private boolean isCopying = false; // Variabile per tenere traccia dello stato del processo di copia
+    private boolean isMoveing = false; // Variabile per tenere traccia dello stato del processo di spostamento
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,12 +79,16 @@ public class SyncGallery extends AppCompatActivity {
             public void onClick(View v) {
                 if (checkPermissionMemory()) {
                     if (directoryUri != null) {
+
                         // Inizializza e mostra l'AlertDialog
                         AlertDialog.Builder builder = new AlertDialog.Builder(SyncGallery.this);
                         builder.setView(R.layout.progress_dialog_layout); // Creare un layout personalizzato con una ProgressBar
                         builder.setCancelable(false); // Imposta su true se vuoi che l'utente possa annullare l'operazione
+
                         progressDialog = builder.create();
                         progressDialog.show();
+
+                        isCopying = true; // Imposta la variabile a true quando inizia il processo di copia
 
                         executeInBackground(() -> {
                             boolean success = Copy();
@@ -93,26 +99,24 @@ public class SyncGallery extends AppCompatActivity {
                                 if (success) {
                                     Toast.makeText(SyncGallery.this, "Copia eseguita con successo!", Toast.LENGTH_SHORT).show();
                                     showProgressNotification("File totali copiati: " + Files, -1, false, NotificationId3);
-                                } else {
+                                } else
                                     Toast.makeText(SyncGallery.this, "Errore, copia non riuscita!", Toast.LENGTH_SHORT).show();
-                                }
+
+                                isCopying = false; // Reimposta la variabile a false quando il processo di copia è completato
+
                             });
                         });
-                    } else {
+                    } else
                         openDirectory();
-                    }
-                } else {
+                } else
                     requestPermissionMemory();
-                }
             }
-
         });
 
         Button moveDirectoryButton = findViewById(R.id.moveDirectoryButton);
         moveDirectoryButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
                 if (checkPermissionMemory()) {
                     if (directoryUri != null) {
 
@@ -122,6 +126,8 @@ public class SyncGallery extends AppCompatActivity {
 
                         progressDialog = builder.create();
                         progressDialog.show();
+
+                        isMoveing = true; // Imposta la variabile a true quando inizia il processo di spostamento
 
                         executeInBackground(() -> {
 
@@ -137,16 +143,16 @@ public class SyncGallery extends AppCompatActivity {
                                 } else
                                     Toast.makeText(SyncGallery.this, "Errore, spostamento non riuscito!", Toast.LENGTH_SHORT).show();
 
+                                isMoveing = false; // Reimposta la variabile a false quando il processo di spostamento è completato
+
                             });
                         });
                     } else
                         openDirectory();
                 } else
                     requestPermissionMemory();
-
             }
         });
-
 
         Button changeDirectoryButton = findViewById(R.id.changeDirectoryButton);
         changeDirectoryButton.setOnClickListener(new View.OnClickListener() {
@@ -191,7 +197,7 @@ public class SyncGallery extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        if (progressDialog != null && !progressDialog.isShowing()) {
+        if (progressDialog != null && (isCopying || isMoveing) && !progressDialog.isShowing()) {
             progressDialog.show();
         }
     }
@@ -200,14 +206,12 @@ public class SyncGallery extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        if (progressDialog != null && progressDialog.isShowing()) {
+        if (progressDialog != null && (isCopying || isMoveing) && progressDialog.isShowing()) {
             progressDialog.dismiss();
         }
     }
 
-    private void executeInBackground(Runnable task) {
-        executorService.execute(task);
-    }
+    private void executeInBackground(Runnable task) {executorService.execute(task);}
 
     private boolean checkPermissionInternet() {
         int networkStatePermission = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_NETWORK_STATE);
