@@ -197,18 +197,16 @@ public class SyncGallery extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        if (progressDialog != null && (isCopying || isMoveing) && !progressDialog.isShowing()) {
+        if (progressDialog != null && (isCopying || isMoveing) && !progressDialog.isShowing())
             progressDialog.show();
-        }
     }
 
     // Nasconde il ProgressDialog quando l'Activity va in background
     @Override
     protected void onPause() {
         super.onPause();
-        if (progressDialog != null && (isCopying || isMoveing) && progressDialog.isShowing()) {
+        if (progressDialog != null && (isCopying || isMoveing) && progressDialog.isShowing())
             progressDialog.dismiss();
-        }
     }
 
     private void executeInBackground(Runnable task) {executorService.execute(task);}
