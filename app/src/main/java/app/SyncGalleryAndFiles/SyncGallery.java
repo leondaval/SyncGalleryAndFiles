@@ -527,11 +527,6 @@ public class SyncGallery extends AppCompatActivity {
     }
 
     private void moveDirectoryToSMB(File localDir, String smbUrl, String shareName, String username, String password) {
-        // Controllo dei permessi
-        if (!checkPermissionMemory()) {
-            Toast.makeText(SyncGallery.this, "Errore, permesso non concesso", Toast.LENGTH_SHORT).show();
-            return;
-        }
 
         // Verifica se la cartella SYNC è vuota
         if (localDir.listFiles() == null || localDir.listFiles().length == 0) {
