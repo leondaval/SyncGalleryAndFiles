@@ -540,84 +540,81 @@ public class SyncGallery extends AppCompatActivity {
         executorService.execute(new Runnable() {
             @Override
             public void run() {
-                    SMBClient client = new SMBClient();
-                    Connection connection = null;
-                    AuthenticationContext ac = null;
-                    Session session = null;
-                    DiskShare share = null;
 
-                    try {
-                        connection = client.connect(smbUrl);
-                        ac = new AuthenticationContext(username, password.toCharArray(), "");
-                        session = connection.authenticate(ac);
-                        share = (DiskShare) session.connectShare(shareName);
+                SMBClient client = new SMBClient();
+                Connection connection;
+                AuthenticationContext ac;
+                Session session;
+                DiskShare share;
 
-                        // Il resto del codice rimane invariato...
+                try {
+                    connection = client.connect(smbUrl);
+                    ac = new AuthenticationContext(username, password.toCharArray(), "");
+                    session = connection.authenticate(ac);
+                    share = (DiskShare) session.connectShare(shareName);
 
+                    // Verifica se la cartella SYNC è vuota
+                    if (localDir.listFiles() == null || localDir.listFiles().length == 0) {
+                        showProgressNotification("Directory SYNC vuota!", -1, false, NotificationId2);
+                        return;
+                    }
 
-                        // Verifica se la cartella SYNC è vuota
-                        if (localDir.listFiles() == null || localDir.listFiles().length == 0) {
-                            showProgressNotification("Directory SYNC vuota!", -1, false, NotificationId2);
-                            return;
-                        }
+                    showProgressNotification("Spostamento in corso...", 0, true, NotificationId);
 
-                        showProgressNotification("Spostamento in corso...", 0, true, NotificationId);
+                    int totalFiles = 0;
+                    int movedFiles = 0;
 
-                        int totalFiles = 0;
-                        int movedFiles = 0;
+                    // Calcola il numero totale di file nella cartella locale
+                    for (File localFile : localDir.listFiles()) {
+                        if (localFile.isFile())
+                            totalFiles++;
+                    }
 
-                        // Calcola il numero totale di file nella cartella locale
-                        for (File localFile : localDir.listFiles()) {
-                            if (localFile.isFile())
-                                totalFiles++;
-                        }
+                    // Sposta ciascun file dalla cartella locale alla condivisione SMB
+                    for (File localFile : localDir.listFiles()) {
+                        if (localFile.isFile()) {
+                            try {
+                                // Utilizza Files.copy() per effettuare il trasferimento
+                                java.nio.file.Files.copy(localFile.toPath(), share.openFile(localFile.getName(),
+                                        EnumSet.of(AccessMask.GENERIC_ALL),
+                                        null,
+                                        SMB2ShareAccess.ALL,
+                                        SMB2CreateDisposition.FILE_OVERWRITE_IF,
+                                        null).getOutputStream());
 
-                        // Sposta ciascun file dalla cartella locale alla condivisione SMB
-                        for (File localFile : localDir.listFiles()) {
-                            if (localFile.isFile()) {
-                                try {
-                                    // Utilizza Files.copy() per effettuare il trasferimento
-                                    java.nio.file.Files.copy(localFile.toPath(), share.openFile(localFile.getName(),
-                                                    EnumSet.of(AccessMask.GENERIC_ALL),
-                                                    null,
-                                                    SMB2ShareAccess.ALL,
-                                                    SMB2CreateDisposition.FILE_OVERWRITE_IF,
-                                                    null).getOutputStream());
+                                // Effettua lo spostamento (taglia) del file locale
+                                if (localFile.delete()) {
+                                    movedFiles++;
 
-                                    // Effettua lo spostamento (taglia) del file locale
-                                    if (localFile.delete()) {
-                                        movedFiles++;
+                                    // Calcola lo stato del processo e aggiorna la notifica con lo stato
+                                    int progress = (movedFiles * 100) / totalFiles;
+                                    showProgressNotification("Spostamento in corso...", progress, true, NotificationId);
 
-                                        // Calcola lo stato del processo e aggiorna la notifica con lo stato
-                                        int progress = (movedFiles * 100) / totalFiles;
-                                        showProgressNotification("Spostamento in corso...", progress, true, NotificationId);
-
-                                        if (!successo[0] && movedFiles == totalFiles) {
-                                            runOnUiThread(() -> {
-                                                Context context = SyncGallery.this;
-                                                NotificationManagerCompat notificationManager = NotificationManagerCompat.from(context);
-                                                notificationManager.cancel(NotificationId);
-                                                showProgressNotification("Spostamento completato", -1, false, NotificationId2);
-                                                Toast.makeText(SyncGallery.this, "File spostati con successo!", Toast.LENGTH_SHORT).show();
-                                            });
-                                            successo[0] = true;
-                                        }
-                                    } else {
-                                        showErrorMessage("Errore durante lo spostamento del file locale");
+                                    if (!successo[0] && movedFiles == totalFiles) {
+                                        runOnUiThread(() -> {
+                                            Context context = SyncGallery.this;
+                                            NotificationManagerCompat notificationManager = NotificationManagerCompat.from(context);
+                                            notificationManager.cancel(NotificationId);
+                                            showProgressNotification("Spostamento completato", -1, false, NotificationId2);
+                                            Toast.makeText(SyncGallery.this, "File spostati con successo!", Toast.LENGTH_SHORT).show();
+                                        });
+                                        successo[0] = true;
                                     }
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                    showErrorMessage("Errore di I/O durante il trasferimento del file");
-                                    return;
+                                } else {
+                                    showErrorMessage("Errore durante lo spostamento del file locale");
                                 }
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                                showErrorMessage("Errore di I/O durante il trasferimento del file");
+                                return;
                             }
                         }
+                    }
                 } catch (IOException e) {
                     e.printStackTrace();
                     showErrorMessage("Errore di connessione al server SMB");
                 }
             }
-
 
             private void showErrorMessage(final String errorMessage) {
                 runOnUiThread(new Runnable() {
