@@ -17,6 +17,7 @@ import android.widget.EditText;
 import android.widget.Toast;
 import android.Manifest;
 import android.graphics.BitmapFactory;
+import android.widget.ToggleButton;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -27,6 +28,7 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
 import androidx.annotation.NonNull;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -47,6 +49,11 @@ import com.hierynomus.smbj.connection.Connection;
 import com.hierynomus.smbj.session.Session;
 import com.hierynomus.smbj.share.DiskShare;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.io.IOException;
+
+
 public class SyncGallery extends AppCompatActivity {
 
     private final int NotificationId = 1; // ID per la notifica sullo stato di avanzamento del processo inziato
@@ -62,6 +69,7 @@ public class SyncGallery extends AppCompatActivity {
     private static final int PERMISSION_REQUEST_CODE_INTERNET = 3; // ID per la richiesta del permesso relativo aLL'uso di internet
     private boolean isCopying = false; // Variabile per tenere traccia dello stato del processo di copia
     private boolean isMoveing = false; // Variabile per tenere traccia dello stato del processo di spostamento
+    private boolean isSyncing = false; // Variabile per tenere traccia dello stato del processo di sincronizzazione
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -171,9 +179,18 @@ public class SyncGallery extends AppCompatActivity {
         syncDirectoryButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                if (checkPermissionMemory() && checkPermissionInternet()){
 
-                if (checkPermissionMemory() && checkPermissionInternet())
+                    AlertDialog.Builder builder = new AlertDialog.Builder(SyncGallery.this);
+                    builder.setView(R.layout.progress_dialog_layout); // Creare un layout personalizzato con una ProgressBar
+                    builder.setCancelable(false); // Imposta su true se vuoi che l'utente possa annullare l'operazione
+
+                    progressDialog = builder.create();
+
                     showSmbCredentialsDialog();
+
+                }
+
                 else {
                     if (!checkPermissionMemory())
                         requestPermissionMemory();
@@ -197,7 +214,7 @@ public class SyncGallery extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        if (progressDialog != null && (isCopying || isMoveing) && !progressDialog.isShowing())
+        if (progressDialog != null && (isCopying || isMoveing || isSyncing) && !progressDialog.isShowing())
             progressDialog.show();
     }
 
@@ -205,7 +222,7 @@ public class SyncGallery extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        if (progressDialog != null && (isCopying || isMoveing) && progressDialog.isShowing())
+        if (progressDialog != null && (isCopying || isMoveing || isSyncing) && progressDialog.isShowing())
             progressDialog.dismiss();
     }
 
@@ -436,13 +453,18 @@ public class SyncGallery extends AppCompatActivity {
             NotificationManager notificationManager = getSystemService(NotificationManager.class);
             notificationManager.createNotificationChannel(canale);
 
+            // Creazione del modello di vibrazione (una sola vibrazione di 300 ms)
+            long[] vibrationPattern = {0, 300};
+
             NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "canale")
                     .setSmallIcon(android.R.drawable.ic_dialog_info)
                     .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher))
                     .setContentTitle("Processo avviato!")
                     .setContentText(message)
                     .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                    .setOngoing(isOngoing);
+                    .setOngoing(isOngoing)
+                    .setVibrate(vibrationPattern)
+                    .setOnlyAlertOnce(true); // Vibra solo alla prima visualizzazione della notifica
 
             if (progress >= 0 && progress <= 100)
                 builder.setProgress(100, progress, false);
@@ -475,13 +497,24 @@ public class SyncGallery extends AppCompatActivity {
             EditText usernameEditText = view.findViewById(R.id.usernameEditText);
             EditText passwordEditText = view.findViewById(R.id.passwordEditText);
             EditText smbUrlEditText = view.findViewById(R.id.smbUrlEditText);
+            ToggleButton toggleButton;
             builder.setView(view)
                     .setPositiveButton("Avvia sync", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
                             String username = usernameEditText.getText().toString();
                             String password = passwordEditText.getText().toString();
                             String smbUrl = smbUrlEditText.getText().toString();
+
+                            progressDialog.show();
+                            isSyncing = true; // Imposta la variabile a true quando inizia il processo di sincronizzazione
+
+                            executeInBackground(() -> {
                             moveDirectoryToSMB(new java.io.File("/sdcard/DCIM/SYNCGALLERY"), smbUrl, "BACKUP", username, password);
+                            });
+
+                            isSyncing = false; // Reimposta la variabile a false quando il processo di sincronizzazione è completato
+                            progressDialog.dismiss(); // Chiudi l'AlertDialog
+
                         }
                     })
                     .setNegativeButton("Annulla", new DialogInterface.OnClickListener() {
@@ -512,89 +545,84 @@ public class SyncGallery extends AppCompatActivity {
         executorService.execute(new Runnable() {
             @Override
             public void run() {
-                try {
                     SMBClient client = new SMBClient();
-                    try (Connection connection = client.connect(smbUrl)) {
-                        AuthenticationContext ac = new AuthenticationContext(username, password.toCharArray(), "");
-                        Session session = connection.authenticate(ac);
-                        // Connect to the specified share name
-                        try (DiskShare share = (DiskShare) session.connectShare(shareName)) {
+                    Connection connection = null;
+                    AuthenticationContext ac = null;
+                    Session session = null;
+                    DiskShare share = null;
 
-                            // Verifica se la cartella SYNC è vuota
-                            if (localDir.listFiles() == null || localDir.listFiles().length == 0) {
-                                showProgressNotification("Directory SYNC vuota!", -1, false, NotificationId2);
-                                return;
-                            }
+                    try {
+                        connection = client.connect(smbUrl);
+                        ac = new AuthenticationContext(username, password.toCharArray(), "");
+                        session = connection.authenticate(ac);
+                        share = (DiskShare) session.connectShare(shareName);
 
-                            showProgressNotification("Spostamento in corso...", 0, true, NotificationId);
+                        // Il resto del codice rimane invariato...
 
-                            int totalFiles = 0;
-                            int movedFiles = 0;
 
-                            for (File localFile : localDir.listFiles()) {
-                                if (localFile.isFile())
-                                    totalFiles++;
-                            }
+                        // Verifica se la cartella SYNC è vuota
+                        if (localDir.listFiles() == null || localDir.listFiles().length == 0) {
+                            showProgressNotification("Directory SYNC vuota!", -1, false, NotificationId2);
+                            return;
+                        }
 
-                            for (File localFile : localDir.listFiles()) {
-                                if (localFile.isFile()) {
-                                    try {
-                                        FileInputStream in = new FileInputStream(localFile);
-                                        com.hierynomus.smbj.share.File smbFile = share.openFile(localFile.getName(),
-                                                EnumSet.of(AccessMask.GENERIC_ALL),
-                                                null,
-                                                SMB2ShareAccess.ALL,
-                                                SMB2CreateDisposition.FILE_OVERWRITE_IF,
-                                                null);
-                                        OutputStream out = smbFile.getOutputStream();
+                        showProgressNotification("Spostamento in corso...", 0, true, NotificationId);
 
-                                        byte[] buffer = new byte[1024];
-                                        int len;
-                                        while ((len = in.read(buffer)) > 0) {
-                                            out.write(buffer, 0, len);
+                        int totalFiles = 0;
+                        int movedFiles = 0;
+
+                        // Calcola il numero totale di file nella cartella locale
+                        for (File localFile : localDir.listFiles()) {
+                            if (localFile.isFile())
+                                totalFiles++;
+                        }
+
+                        // Sposta ciascun file dalla cartella locale alla condivisione SMB
+                        for (File localFile : localDir.listFiles()) {
+                            if (localFile.isFile()) {
+                                try {
+                                    // Utilizza Files.copy() per effettuare il trasferimento
+                                    java.nio.file.Files.copy(localFile.toPath(), share.openFile(localFile.getName(),
+                                                    EnumSet.of(AccessMask.GENERIC_ALL),
+                                                    null,
+                                                    SMB2ShareAccess.ALL,
+                                                    SMB2CreateDisposition.FILE_OVERWRITE_IF,
+                                                    null).getOutputStream());
+
+                                    // Effettua lo spostamento (taglia) del file locale
+                                    if (localFile.delete()) {
+                                        movedFiles++;
+
+                                        // Calcola lo stato del processo e aggiorna la notifica con lo stato
+                                        int progress = (movedFiles * 100) / totalFiles;
+                                        showProgressNotification("Spostamento in corso...", progress, true, NotificationId);
+
+                                        if (!successo[0] && movedFiles == totalFiles) {
+                                            runOnUiThread(() -> {
+                                                Context context = SyncGallery.this;
+                                                NotificationManagerCompat notificationManager = NotificationManagerCompat.from(context);
+                                                notificationManager.cancel(NotificationId);
+                                                showProgressNotification("Spostamento completato", -1, false, NotificationId2);
+                                                Toast.makeText(SyncGallery.this, "File spostati con successo!", Toast.LENGTH_SHORT).show();
+                                            });
+                                            successo[0] = true;
                                         }
-
-                                        // Chiudi gli stream
-                                        in.close();
-                                        out.close();
-
-                                        // Effettua lo spostamento (taglia) del file locale
-                                        if (localFile.delete()) {
-                                            movedFiles++;
-
-                                            // Calcola lo stato del processo e aggiorna la notifica con lo stato
-                                            int progress = (movedFiles * 100) / totalFiles;
-                                            showProgressNotification("Spostamento in corso...", progress, true, NotificationId);
-
-                                            if (!successo[0] && movedFiles == totalFiles) {
-                                                runOnUiThread(new Runnable() {
-                                                    public void run() {
-                                                        Context context = SyncGallery.this; // Ottieni il contesto dell'attività
-                                                        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(context);
-                                                        notificationManager.cancel(NotificationId);
-                                                        // Mostra la notifica di spostamento completato
-                                                        showProgressNotification("Spostamento completato", -1, false, NotificationId2);
-                                                        Toast.makeText(SyncGallery.this, "File spostati con successo!", Toast.LENGTH_SHORT).show();
-                                                    }
-                                                });
-                                                successo[0] = true;
-                                            }
-                                        } else
-                                            showErrorMessage("Errore durante lo spostamento del file locale");
-                                    } catch (IOException e) {
-                                        e.printStackTrace();
-                                        showErrorMessage("Errore di I/O durante il trasferimento del file");
-                                        return;
+                                    } else {
+                                        showErrorMessage("Errore durante lo spostamento del file locale");
                                     }
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                    showErrorMessage("Errore di I/O durante il trasferimento del file");
+                                    return;
                                 }
                             }
                         }
-                    }
                 } catch (IOException e) {
                     e.printStackTrace();
                     showErrorMessage("Errore di connessione al server SMB");
                 }
             }
+
 
             private void showErrorMessage(final String errorMessage) {
                 runOnUiThread(new Runnable() {

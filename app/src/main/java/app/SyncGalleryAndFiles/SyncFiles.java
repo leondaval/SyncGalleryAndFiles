@@ -49,6 +49,7 @@ public class SyncFiles extends AppCompatActivity {
     private AlertDialog progressDialog; // Popup a schermo che mostra lo il caricamento del processo corrente
     private boolean isCopying = false; // Variabile per tenere traccia dello stato del processo di copia
     private boolean isMoveing = false; // Variabile per tenere traccia dello stato del processo di spostamento
+    private boolean isSyncing = false; // Variabile per tenere traccia dello stato del processo di sincronizzazione
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,6 +89,7 @@ public class SyncFiles extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if (checkPermissionMemory() || permissionCheck) {
+
                     AlertDialog.Builder builder = new AlertDialog.Builder(SyncFiles.this);
                     builder.setView(R.layout.progress_dialog_layout); // Creare un layout personalizzato con una ProgressBar
                     builder.setCancelable(false); // Imposta su true se vuoi che l'utente possa annullare l'operazione
@@ -113,8 +115,23 @@ public class SyncFiles extends AppCompatActivity {
         syncDirectoryButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (checkPermissionMemory() && checkPermissionInternet())
+                if (checkPermissionMemory() && checkPermissionInternet()) {
+
+                    AlertDialog.Builder builder = new AlertDialog.Builder(SyncFiles.this);
+                    builder.setView(R.layout.progress_dialog_layout); // Creare un layout personalizzato con una ProgressBar
+                    builder.setCancelable(false); // Imposta su true se vuoi che l'utente possa annullare l'operazione
+
+                    progressDialog = builder.create();
+                    progressDialog.show();
+
+                    isSyncing = true; // Imposta la variabile a true quando inizia il processo di spostamento
+
                     showSmbCredentialsDialog();
+
+                    isSyncing = false; // Reimposta la variabile a false quando il processo di spostamento è completato
+                    progressDialog.dismiss(); // Chiudi l'AlertDialog
+                }
+
                 else {
                     if (!checkPermissionMemory())
                         requestPermissionMemory();
@@ -138,7 +155,7 @@ public class SyncFiles extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        if (progressDialog != null && (isCopying || isMoveing) && !progressDialog.isShowing())
+        if (progressDialog != null && (isCopying || isMoveing || isSyncing) && !progressDialog.isShowing())
             progressDialog.show();
     }
 
@@ -146,7 +163,7 @@ public class SyncFiles extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        if (progressDialog != null && (isCopying || isMoveing) && progressDialog.isShowing())
+        if (progressDialog != null && (isCopying || isMoveing || isSyncing) && progressDialog.isShowing())
             progressDialog.dismiss();
     }
 
@@ -364,7 +381,9 @@ public class SyncFiles extends AppCompatActivity {
                             String username = usernameEditText.getText().toString();
                             String password = passwordEditText.getText().toString();
                             String smbUrl = smbUrlEditText.getText().toString();
+                            executeInBackground(() -> {
                             copyDirectoryToSMB(new java.io.File("/sdcard/DCIM/SYNCFILES"), smbUrl, "BACKUP", username, password);
+                            });
                         }
                     })
                     .setNegativeButton("Annulla", new DialogInterface.OnClickListener() {
